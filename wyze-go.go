@@ -6,6 +6,7 @@ import (
   "fmt"
   "os"
   "strings"
+  "strconv"
   "github.com/slack-go/slack"
   "sjones/wyze-go/wyze"
 )
@@ -32,8 +33,11 @@ func main() {
 
   accessToken := wyze.GetWyzeAccessToken(client, wyzeToken)
 
+  lookback_seconds,_ := strconv.Atoi(environment["WYZE_LOOKBACK_SECONDS"])
+  lookback_seconds *= -1
+
   end_time := time.Now()
-  begin_time := end_time.Add(time.Minute * -10)
+  begin_time := end_time.Add(time.Second * time.Duration(lookback_seconds))
 
   files := wyze.GetWyzeCamThumbnails(client,
     environment["WYZE_HOME"],
