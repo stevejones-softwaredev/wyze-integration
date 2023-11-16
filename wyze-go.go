@@ -4,6 +4,7 @@ import (
   "github.com/go-resty/resty/v2"
   "time"
   "fmt"
+  "log"
   "os"
   "strings"
   "strconv"
@@ -14,20 +15,7 @@ import (
 func main() {
   client := resty.New()
 
-  getenvironment := func(data []string, getkeyval func(item string) (key, val string)) map[string]string {
-      items := make(map[string]string)
-      for _, item := range data {
-          key, val := getkeyval(item)
-          items[key] = val
-      }
-      return items
-    }
-    environment := getenvironment(os.Environ(), func(item string) (key, val string) {
-        splits := strings.Split(item, "=")
-        key = splits[0]
-        val = splits[1]
-        return
-    })
+  environment := validateNeededInputs()
 
   wyzeToken := fmt.Sprintf("%s==", environment["WYZE_ACCESS_TOKEN"])
 
@@ -40,7 +28,7 @@ func main() {
   begin_time := end_time.Add(time.Second * time.Duration(lookback_seconds))
 
   files := wyze.GetWyzeCamThumbnails(client,
-    environment["WYZE_HOME"],
+    getOptionalVar("WYZE_HOME", "./", &environment),
     accessToken,
     10,
     parseCamList(environment["WYZE_CAM_LIST"]),
@@ -86,5 +74,51 @@ func getDeviceMacList(client *resty.Client,
   }
 
   return deviceMap
+}
+
+func validateNeededInputs() map[string]string{
+  getenvironment := func(data []string, getkeyval func(item string) (key, val string)) map[string]string {
+      items := make(map[string]string)
+      for _, item := range data {
+          key, val := getkeyval(item)
+          items[key] = val
+      }
+      return items
+    }
+
+  environment := getenvironment(os.Environ(), func(item string) (key, val string) {
+      splits := strings.Split(item, "=")
+      key = splits[0]
+      val = splits[1]
+      return
+  })
+
+  checkRequiredVar("WYZE_ACCESS_TOKEN", environment)
+  checkRequiredVar("SLACK_OAUTH_TOKEN", environment)
+  checkRequiredVar("WYZE_CAM_LIST", environment)
+  checkRequiredVar("SLACK_CHANNEL", environment)
+  getOptionalVar("WYZE_LOOKBACK_SECONDS", "330", &environment)
+  getOptionalVar("WYZE_HOME", "./", &environment)
+
+  return environment
+}
+
+func checkRequiredVar(name string, env map[string]string) string {
+  value, ok := env[name]
+  if !ok {
+    log.Fatalf("Missing required environment variable %s; exiting", name)
+  }
+
+  return value
+}
+
+func getOptionalVar(name string, defaultValue string, env *map[string]string)  string {
+  value, ok := (*env)[name]
+  if !ok {
+    log.Printf("Missing optional environment variable %s; using default %s", name, defaultValue)
+    return defaultValue
+  } else {
+    return value
+  }
 }
 
