@@ -4,6 +4,7 @@ import (
   "github.com/go-resty/resty/v2"
   "time"
   "fmt"
+  "io/ioutil"
   "log"
   "os"
   "strings"
@@ -21,25 +22,21 @@ func main() {
 
   accessToken := wyze.GetWyzeAccessToken(client, wyzeToken)
 
-  lookback_seconds,_ := strconv.Atoi(environment["WYZE_LOOKBACK_SECONDS"])
-  lookback_seconds *= -1
-
-  end_time := time.Now()
-  begin_time := end_time.Add(time.Second * time.Duration(lookback_seconds))
+  start, end := getTimeBounds(environment)
 
   files := wyze.GetWyzeCamThumbnails(client,
     getOptionalVar("WYZE_HOME", "./", &environment),
     accessToken,
     10,
     parseCamList(environment["WYZE_CAM_LIST"]),
-    begin_time,
-    end_time)
+    start,
+    end)
   deviceMap := getDeviceMacList(client, accessToken)
 
+  api := slack.New(environment["SLACK_OAUTH_TOKEN"])
   for _,file := range files {
     msg := fmt.Sprintf("Recorded at %s from %s",time.UnixMilli(file.Timestamp).Format(time.RFC850), deviceMap[file.Mac].Nickname)
     fmt.Println(msg)
-    api := slack.New(environment["SLACK_OAUTH_TOKEN"])
     fileInfo,_ := os.Stat(file.Path)
     uploadParams := slack.UploadFileV2Parameters{
       Channel: environment["SLACK_CHANNEL"],
@@ -101,6 +98,29 @@ func validateNeededInputs() map[string]string{
   getOptionalVar("WYZE_HOME", "./", &environment)
 
   return environment
+}
+
+func getTimeBounds(environment map[string]string) (time.Time, time.Time) {
+  dirName := getOptionalVar("WYZE_HOME", "./", &environment)
+  files, _ := ioutil.ReadDir(dirName)
+  end_time := time.Now()
+  lookback_seconds,_ := strconv.Atoi(environment["WYZE_LOOKBACK_SECONDS"])
+  lookback_seconds *= -1
+
+  if len(files) == 0 {
+    return end_time.Add(time.Second * time.Duration(lookback_seconds)), end_time
+  } else {
+    lastFileName := files[len(files)-1].Name()
+    log.Print("Last file:",lastFileName)
+    beginStampString := strings.Split(lastFileName,".")[0]
+    i, err := strconv.ParseInt(beginStampString, 10, 64)
+    if err != nil {
+      log.Print(err)
+      return end_time.Add(time.Second * time.Duration(lookback_seconds)), end_time
+    }
+
+    return time.UnixMilli(i + 1000), end_time
+  }
 }
 
 func checkRequiredVar(name string, env map[string]string) string {
