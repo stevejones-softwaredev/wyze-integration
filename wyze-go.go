@@ -4,6 +4,7 @@ import (
   "github.com/go-resty/resty/v2"
   "time"
   "fmt"
+  "io/fs"
   "io/ioutil"
   "log"
   "os"
@@ -107,6 +108,8 @@ func getTimeBounds(environment map[string]string) (time.Time, time.Time) {
   lookback_seconds,_ := strconv.Atoi(environment["WYZE_LOOKBACK_SECONDS"])
   lookback_seconds *= -1
 
+  defer deleteExpiredThumbnails(dirName, files)
+
   if len(files) == 0 {
     return end_time.Add(time.Second * time.Duration(lookback_seconds)), end_time
   } else {
@@ -120,6 +123,20 @@ func getTimeBounds(environment map[string]string) (time.Time, time.Time) {
     }
 
     return time.UnixMilli(i + 1000), end_time
+  }
+}
+
+func deleteExpiredThumbnails(dir string, files []fs.FileInfo) {
+  for _,file := range files {
+    diff := time.Since(file.ModTime())
+    if diff.Hours() > 24 {
+      deleteFile := fmt.Sprintf("%s%s", dir, file.Name())
+      err := os.Remove(deleteFile)
+
+      if (err != nil) {
+        fmt.Println(err)
+      }
+    }
   }
 }
 
