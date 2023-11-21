@@ -114,7 +114,6 @@ func getTimeBounds(environment map[string]string) (time.Time, time.Time) {
     return end_time.Add(time.Second * time.Duration(lookback_seconds)), end_time
   } else {
     lastFileName := files[len(files)-1].Name()
-    log.Print("Last file:",lastFileName)
     beginStampString := strings.Split(lastFileName,".")[0]
     i, err := strconv.ParseInt(beginStampString, 10, 64)
     if err != nil {
