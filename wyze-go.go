@@ -11,7 +11,7 @@ import (
   "strings"
   "strconv"
   "github.com/slack-go/slack"
-  "sjones/wyze-go/wyze"
+  "stevejones.softwaredev/wyze-go/wyze"
 )
 
 func main() {
@@ -58,7 +58,7 @@ func main() {
 }
 
 func parseCamList(camList string) []string {
-  return strings.Split(camList, ",")
+  return strings.Split(camList, ":")
 }
 
 func getDeviceMacList(client *resty.Client,

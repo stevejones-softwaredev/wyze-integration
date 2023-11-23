@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-wyze-integration-config
+data:
+  WYZE_CAM_LIST: "{{ .Values.wyze.camList }}"
+  WYZE_LOOKBACK_SECONDS: "{{ .Values.wyze.lookbackInSeconds }}"
+  SLACK_CHANNEL: "{{ .Values.slack.channel }}"

@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-wyze-job
+spec:
+  schedule: "{{ .Values.scheduling.cron }}"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+            - name: {{ .Release.Name }}-wyze-thumbnails-storage
+              persistentVolumeClaim:
+                claimName: {{ .Release.Name }}-wyze-thumbnails-mount
+          containers:
+            - name: wyze-integration-container
+              image: docker.io/library/wyze-go:tiny
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - mountPath: "/app/download/"
+                  name: {{ .Release.Name }}-wyze-thumbnails-storage
+              env:
+                - name: WYZE_ACCESS_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Release.Name }}-wyze-integration-secrets
+                      key: WYZE_ACCESS_TOKEN
+                - name: SLACK_OAUTH_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Release.Name }}-wyze-integration-secrets
+                      key: SLACK_OAUTH_TOKEN
+                - name: WYZE_CAM_LIST
+                  valueFrom:
+                    configMapKeyRef:
+                      name: {{ .Release.Name }}-wyze-integration-config
+                      key: WYZE_CAM_LIST
+                - name: WYZE_LOOKBACK_SECONDS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: {{ .Release.Name }}-wyze-integration-config
+                      key: WYZE_LOOKBACK_SECONDS
+                - name: SLACK_CHANNEL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: {{ .Release.Name }}-wyze-integration-config
+                      key: SLACK_CHANNEL
+

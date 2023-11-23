@@ -8,7 +8,7 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	github.com/slack-go/slack v0.12.3
-	sjones/wyze-go/wyze v1.0.0
+	stevejones.softwaredev/wyze-go/wyze v1.0.0
 )
 
-replace sjones/wyze-go/wyze v1.0.0 => ./wyze
+replace stevejones.softwaredev/wyze-go/wyze v1.0.0 => ./wyze

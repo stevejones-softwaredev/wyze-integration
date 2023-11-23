@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: wyze-test
+spec:
+  volumes:
+    - name: wyze-thumbnails-storage
+      persistentVolumeClaim:
+        claimName: wyze-thumbnails-mount
+  containers:
+    - name: wyze-integration-container
+      image: docker.io/library/wyze-go:latest
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - mountPath: "/app/download/"
+          name: wyze-thumbnails-storage
+      env:
+        - name: WYZE_ACCESS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: wyze-integration-secrets
+              key: WYZE_ACCESS_TOKEN
+        - name: SLACK_OAUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: wyze-integration-secrets
+              key: SLACK_OAUTH_TOKEN
+        - name: WYZE_CAM_LIST
+          valueFrom:
+            configMapKeyRef:
+              name: wyze-integration-config
+              key: WYZE_CAM_LIST
+        - name: WYZE_LOOKBACK_SECONDS
+          valueFrom:
+            configMapKeyRef:
+              name: wyze-integration-config
+              key: WYZE_LOOKBACK_SECONDS
+        - name: SLACK_CHANNEL
+          valueFrom:
+            configMapKeyRef:
+              name: wyze-integration-config
+              key: SLACK_CHANNEL
+
