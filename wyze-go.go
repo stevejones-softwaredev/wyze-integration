@@ -34,27 +34,71 @@ func main() {
     end)
   deviceMap := getDeviceMacList(client, accessToken)
 
-  api := slack.New(environment["SLACK_OAUTH_TOKEN"])
+  botApi := slack.New(environment["SLACK_OAUTH_BOT_TOKEN"])
+  userApi := slack.New(environment["SLACK_OAUTH_USER_TOKEN"])
+
+  catNameSectionBlock, catActivitySectionBlock := createConstantSectionBlocks()
+
   for _,file := range files {
     msg := fmt.Sprintf("Recorded at %s from %s",time.UnixMilli(file.Timestamp).Format(time.RFC850), deviceMap[file.Mac].Nickname)
     fmt.Println(msg)
-    fileInfo,_ := os.Stat(file.Path)
-    uploadParams := slack.UploadFileV2Parameters{
-      Channel: environment["SLACK_CHANNEL"],
+    uploadParams := slack.FileUploadParameters{
       File: file.Path,
       Title: msg,
       InitialComment: msg,
       Filename: file.Path,
-      FileSize: int(fileInfo.Size()),
     }
-    file, err := api.UploadFileV2(uploadParams)
-
+    uploadedFile, err := userApi.UploadFile(uploadParams)
     if err != nil {
-      fmt.Printf("%s\n", err)
-      continue
+      fmt.Println(err)
     }
-    fmt.Printf("ID: %s, Title: %s\n", file.ID, file.Title)
+
+    publicFile,_,_,_ := userApi.ShareFilePublicURL(uploadedFile.ID)
+
+    fmt.Printf("ID: %s, Title: %s\n", uploadedFile.ID, uploadedFile.Title)
+
+    selectHeader := fmt.Sprintf("%s\n%s\n%s", time.UnixMilli(file.Timestamp).Format(time.RFC850), deviceMap[file.Mac].Nickname, publicFile.URLPrivate)
+    textBlock := slack.NewTextBlockObject("mrkdwn", selectHeader, false, false)
+//    headerSectionBlock := slack.NewSectionBlock(textBlock, nil, nil)
+
+    imageBlock := slack.NewImageBlockElement(publicFile.URLPrivate, msg)
+    imageAccessory := slack.NewAccessory(imageBlock)
+    imageSectionBlock := slack.NewSectionBlock(textBlock, nil, imageAccessory)
+
+    _,_,_,msgErr := botApi.SendMessage(environment["SLACK_CHANNEL"], slack.MsgOptionBlocks(imageSectionBlock, catNameSectionBlock, catActivitySectionBlock))
+
+    if msgErr != nil {
+      fmt.Println(msgErr)
+    }
   }
+}
+
+func createConstantSectionBlocks() (*slack.SectionBlock,*slack.SectionBlock) {
+  catNameTextBlock := slack.NewTextBlockObject("plain_text", "Cat Name:", false, false)
+  catNameSydneyText := slack.NewTextBlockObject("plain_text", "Sydney", false, false)
+  catNameSaviText := slack.NewTextBlockObject("plain_text", "Savi", false, false)
+  catNameNoCatText := slack.NewTextBlockObject("plain_text", "Not a Cat", false, false)
+  catNameSydneyOption := slack.NewOptionBlockObject("Sydney", catNameSydneyText, nil)
+  catNameSaviOption := slack.NewOptionBlockObject("Savi", catNameSaviText, nil)
+  catNameNoCatOption := slack.NewOptionBlockObject("NotACat", catNameNoCatText, nil)
+  catNameOptionsBlock := slack.NewOptionsSelectBlockElement("static_select", catNameTextBlock, "cat_name", catNameSaviOption, catNameSydneyOption, catNameNoCatOption)
+  catNameAccessory := slack.NewAccessory(catNameOptionsBlock)
+  catNameSectionBlock := slack.NewSectionBlock(catNameTextBlock, nil, catNameAccessory)
+  catNameSectionBlock.BlockID = "cat_name"
+
+  catActivityTextBlock := slack.NewTextBlockObject("plain_text", "Cat Activity:", false, false)
+  catActivityPeeText := slack.NewTextBlockObject("plain_text", "Pee", false, false)
+  catActivityPoopText := slack.NewTextBlockObject("plain_text", "Poop", false, false)
+  catActivityNoneText := slack.NewTextBlockObject("plain_text", "Neither", false, false)
+  catActivityPeeOption := slack.NewOptionBlockObject("Pee", catActivityPeeText, nil)
+  catActivityPoopOption := slack.NewOptionBlockObject("Poop", catActivityPoopText, nil)
+  catActivityNoneOption := slack.NewOptionBlockObject("Neither", catActivityNoneText, nil)
+  catActivityOptionsBlock := slack.NewOptionsSelectBlockElement("static_select", catActivityTextBlock, "cat_activity", catActivityPeeOption, catActivityPoopOption, catActivityNoneOption)
+  catActivityAccessory := slack.NewAccessory(catActivityOptionsBlock)
+  catActivitySectionBlock := slack.NewSectionBlock(catActivityTextBlock, nil, catActivityAccessory)
+  catActivitySectionBlock.BlockID = "cat_activity"
+
+  return catNameSectionBlock, catActivitySectionBlock
 }
 
 func parseCamList(camList string) []string {
