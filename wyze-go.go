@@ -41,7 +41,6 @@ func main() {
 
   for _,file := range files {
     msg := fmt.Sprintf("Recorded at %s from %s",time.UnixMilli(file.Timestamp).Format(time.RFC850), deviceMap[file.Mac].Nickname)
-    fmt.Println(msg)
     uploadParams := slack.FileUploadParameters{
       File: file.Path,
       Title: msg,
@@ -136,7 +135,8 @@ func validateNeededInputs() map[string]string{
   })
 
   checkRequiredVar("WYZE_ACCESS_TOKEN", environment)
-  checkRequiredVar("SLACK_OAUTH_TOKEN", environment)
+  checkRequiredVar("SLACK_OAUTH_BOT_TOKEN", environment)
+  checkRequiredVar("SLACK_OAUTH_USER_TOKEN", environment)
   checkRequiredVar("WYZE_CAM_LIST", environment)
   checkRequiredVar("SLACK_CHANNEL", environment)
   getOptionalVar("WYZE_LOOKBACK_SECONDS", "330", &environment)
