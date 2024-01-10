@@ -56,11 +56,11 @@ func main() {
 
     fmt.Printf("ID: %s, Title: %s\n", uploadedFile.ID, uploadedFile.Title)
 
-    selectHeader := fmt.Sprintf("%s\n%s\n%s", time.UnixMilli(file.Timestamp).Format(time.RFC850), deviceMap[file.Mac].Nickname, publicFile.URLPrivate)
+    selectHeader := fmt.Sprintf("%s\n%s\n%s", time.UnixMilli(file.Timestamp).Format(time.RFC850), deviceMap[file.Mac].Nickname, publicFile.PermalinkPublic)
     textBlock := slack.NewTextBlockObject("mrkdwn", selectHeader, false, false)
 //    headerSectionBlock := slack.NewSectionBlock(textBlock, nil, nil)
 
-    imageBlock := slack.NewImageBlockElement(publicFile.URLPrivate, msg)
+    imageBlock := slack.NewImageBlockElement(publicFile.PermalinkPublic, msg)
     imageAccessory := slack.NewAccessory(imageBlock)
     imageSectionBlock := slack.NewSectionBlock(textBlock, nil, imageAccessory)
 
