@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: wyze-integration-config
-data:
-  WYZE_CAM_LIST: "2CAA8EF5AA50,2CAA8EFB491E,AN_RSCW_D03F27FAF092"
-  WYZE_LOOKBACK_SECONDS: "330"
-  SLACK_CHANNEL: "C0652LD7ASD"

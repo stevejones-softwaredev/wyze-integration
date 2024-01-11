@@ -1,5 +1,14 @@
 package wyze
 
+type WyzeRefreshTokenRequest struct {
+  Name string     `json:"email"`
+  Password string `json:"password"`
+}
+
+type WyzeRefreshTokenResponse struct {
+  RefreshToken string     `json:"refresh_token"`
+}
+
 type WyzeAccessTokenRequest struct {
   AppVer string           `json:"app_ver"`
   PhoneId string          `json:"phone_id"`
@@ -14,6 +23,7 @@ type WyzeAccessTokenData struct {
 }
 
 type WyzeAccessTokenResponse struct {
+  Code string              `json:"code"`
   Data WyzeAccessTokenData `json:"data"`
 }
 
@@ -49,7 +59,7 @@ type WyzeEventRequest struct {
   SC string               `json:"sc"`
   SV string               `json:"sv"`
   Devices []string        `json:"device_mac_list"`
-  Count int            `json:"count"`
+  Count int               `json:"count"`
   OrderBy string          `json:"order_by"`
   PhoneSystemType string  `json:"phone_system_type"`
   BeginTime string        `json:"begin_time"`

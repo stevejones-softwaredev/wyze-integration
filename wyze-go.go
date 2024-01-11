@@ -18,8 +18,8 @@ func main() {
   client := resty.New()
 
   environment := validateNeededInputs()
-
-  wyzeToken := fmt.Sprintf("%s==", environment["WYZE_ACCESS_TOKEN"])
+  
+  wyzeToken := fmt.Sprintf("%s==", environment["WYZE_REFRESH_TOKEN"])
 
   accessToken := wyze.GetWyzeAccessToken(client, wyzeToken)
 
@@ -134,7 +134,8 @@ func validateNeededInputs() map[string]string{
       return
   })
 
-  checkRequiredVar("WYZE_ACCESS_TOKEN", environment)
+  fmt.Println(environment["TEST_VAR"])
+  checkRequiredVar("WYZE_REFRESH_TOKEN", environment)
   checkRequiredVar("SLACK_OAUTH_BOT_TOKEN", environment)
   checkRequiredVar("SLACK_OAUTH_USER_TOKEN", environment)
   checkRequiredVar("WYZE_CAM_LIST", environment)

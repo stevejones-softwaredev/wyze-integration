@@ -21,11 +21,11 @@ spec:
                 - mountPath: "/app/download/"
                   name: {{ .Release.Name }}-wyze-thumbnails-storage
               env:
-                - name: WYZE_ACCESS_TOKEN
+                - name: WYZE_REFRESH_TOKEN
                   valueFrom:
                     secretKeyRef:
                       name: {{ .Release.Name }}-wyze-integration-secrets
-                      key: WYZE_ACCESS_TOKEN
+                      key: WYZE_REFRESH_TOKEN
                 - name: SLACK_OAUTH_TOKEN
                   valueFrom:
                     secretKeyRef:
