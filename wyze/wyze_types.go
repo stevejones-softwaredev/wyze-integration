@@ -28,12 +28,22 @@ type WyzeAccessTokenResponse struct {
 }
 
 type WyzeDevice struct {
-  MAC string      `json:"mac"`
-  Nickname string `json:"nickname"`
+  MAC string       `json:"mac"`
+  Nickname string  `json:"nickname"`
+  Model string     `json:"product_model"`
+  DeviceMac string `json:"device_mac"`
+  Properties []WyzeDevicePropertyEntry
+}
+
+type WyzeDeviceGroup struct {
+  Name string             `json:"group_name"`
+  DeviceList []WyzeDevice `json:"device_list"`
+  PoweredOn bool
 }
 
 type WyzeDeviceData struct {
-  DeviceList []WyzeDevice `json:"device_list"`
+  DeviceList []WyzeDevice     `json:"device_list"`
+  GroupList []WyzeDeviceGroup `json:"device_group_list"`
 }
 
 type WyzeDeviceListResponse struct {
@@ -50,6 +60,68 @@ type WyzeDeviceListRequest struct {
   SC string               `json:"sc"`
   SV string               `json:"sv"`
   TS string               `json:"ts"`
+}
+
+type WyzeActionProperty struct {
+  Pid string    `json:"pid"`
+  Pvalue string `json:"pvalue"`
+}
+
+type WyzeActionParamEntry struct {
+  MAC string                 `json:"mac"`
+  PList []WyzeActionProperty `json:"plist"`
+}
+
+type WyzeActionParams struct {
+  List []WyzeActionParamEntry `json:"list"`
+}
+
+type WyzeActionList struct {
+  ActionKey string        `json:"action_key"`
+  InstanceId string       `json:"instance_id"`
+  ProviderKey string      `json:"provider_key"`
+  Params WyzeActionParams `json:"action_params"`
+}
+
+type WyzeRunActionListRequest struct {
+  AppVer string               `json:"app_ver"`
+  PhoneId string              `json:"phone_id"`
+  AccessToken string          `json:"access_token"`
+  SC string                   `json:"sc"`
+  SV string                   `json:"sv"`
+  TS string                   `json:"ts"`
+  ActionList []WyzeActionList `json:"action_list"`
+}
+
+type WyzeDevicePropertyRequest struct {
+  AppVer string               `json:"app_ver"`
+  PhoneId string              `json:"phone_id"`
+  AccessToken string          `json:"access_token"`
+  SC string                   `json:"sc"`
+  SV string                   `json:"sv"`
+  TS string                   `json:"ts"`
+  DeviceList []string         `json:"device_list"`
+  TargetPropertyList []string `json:"target_pid_list"`
+}
+
+type WyzeDevicePropertyEntry struct {
+  Pid string   `json:"pid"`
+  Value string `json:"value"`
+}
+
+type WyzeDeviceProperties struct {
+  DeviceMac string                     `json:"device_mac"`
+  Properties []WyzeDevicePropertyEntry `json:"device_property_list"`
+  PropertyMap map[string]string
+}
+
+type WyzeDevicePropertyData struct {
+  DeviceList []WyzeDeviceProperties `json:"device_list"`
+}
+
+type WyzeDevicePropertyResponse struct {
+  Code string                 `json:"code"`
+  Data WyzeDevicePropertyData `json:"data"`
 }
 
 type WyzeEventRequest struct {

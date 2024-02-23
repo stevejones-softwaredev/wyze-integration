@@ -100,7 +100,7 @@ func GetWyzeCamThumbnails(client *resty.Client,
     fmt.Println(err)
   } else {
     for _, event := range eventResponse.Data.EventList {
-      for _, 	file := range event.FileList {
+      for _, file := range event.FileList {
         fileName := fmt.Sprintf("%s%d.jpg", downloadDirectory, event.EventTime)
 
         _,err := os.Stat(fileName)
@@ -160,6 +160,204 @@ func GetWyzeDeviceList(client *resty.Client,
   } else {
     return deviceListResponse.Data.DeviceList
   }
+}
+
+func GetWyzeGroupList(client *resty.Client,
+    accessToken string) []WyzeDeviceGroup {
+  var deviceListResponse WyzeDeviceListResponse
+
+  payload := WyzeDeviceListRequest{
+    AppVer: wyzeDeveloperApi,
+    PhoneId: wyzeDeveloperApi,
+    AccessToken: accessToken,
+    SC: wyzeDeveloperApi,
+    SV: wyzeDeveloperApi,
+    TS: wyzeRequestTimestamp,
+  }
+
+  _, err := client.R().
+    SetHeader("Content-Type", wyzeContentType).
+    SetHeader("Host", wyzeApiHost).
+    SetBody(&payload).
+    SetResult(&deviceListResponse).
+    Post(wyzeGetDeviceListEndpoint)
+
+  devicesMap := make(map[string]WyzeDevice)
+  var deviceMacs []string
+  var propIds []string
+  
+  propIds = append(propIds, "P3")
+
+  for _,device := range deviceListResponse.Data.DeviceList {
+    devicesMap[device.MAC] = device
+    deviceMacs = append(deviceMacs, device.MAC)
+  }
+  
+  properties := GetWyzeDeviceProperties(client, accessToken, deviceMacs, propIds)
+
+  propMap := make(map[string]map[string]string)
+  var newGroups []WyzeDeviceGroup
+  
+  for _,prop := range properties.Data.DeviceList {
+    propMap[prop.DeviceMac] = prop.PropertyMap
+  }
+  
+  for _,group := range deviceListResponse.Data.GroupList {
+    var newGroupDeviceList []WyzeDevice
+    group.PoweredOn = false
+  
+    for _,device := range group.DeviceList {
+      dev,ok := devicesMap[device.DeviceMac]
+
+      if (ok) {
+        newGroupDeviceList = append(newGroupDeviceList, dev)
+      }
+      
+      prop, ok := propMap[device.DeviceMac]
+      
+      if (ok) {
+        group.PoweredOn = (group.PoweredOn || (prop["P3"] == "1"))
+      }
+    }
+
+    group.DeviceList = newGroupDeviceList
+    newGroups = append(newGroups, group)
+  }
+  
+  deviceListResponse.Data.GroupList = newGroups
+
+  if err != nil {
+    fmt.Println(err)
+    return []WyzeDeviceGroup{}
+  } else {
+    return deviceListResponse.Data.GroupList
+  }
+}
+
+func BuildGroupNameMap(groups []WyzeDeviceGroup) map[string]WyzeDeviceGroup {
+  groupMap := make(map[string]WyzeDeviceGroup)
+  
+  for _,group := range groups {
+    groupMap[group.Name] = group
+  }
+  
+  return groupMap
+}
+
+func MakeGroupDeviceMap(groupName string, groupMap map[string]WyzeDeviceGroup) map[string]string {
+  deviceMap := make(map[string]string)
+  
+  group,ok := groupMap[groupName]
+  
+  if (ok) {
+    for _,device := range group.DeviceList {
+      deviceMap[device.MAC] = device.Model
+    }
+  }
+  
+  return deviceMap
+}
+
+func SetWyzeProperties(client *resty.Client,
+    accessToken string,
+    devices map[string]string,
+    properties map[string]string) {
+
+  var propList []WyzeActionProperty
+  
+  for key, value := range properties {
+    prop := WyzeActionProperty {
+      Pid: key,
+      Pvalue: value,
+    }
+    propList = append(propList, prop)
+  }
+  
+  var actionList []WyzeActionList
+  
+  for device,model := range devices {
+    var paramEntries []WyzeActionParamEntry
+    paramEntry := WyzeActionParamEntry{
+      MAC: device,
+      PList: propList,
+    }
+    
+    paramEntries = append(paramEntries, paramEntry)
+
+    param := WyzeActionParams{
+      List: paramEntries,
+    }
+
+    action := WyzeActionList{
+      ActionKey: "set_mesh_property",
+      InstanceId: device,
+      ProviderKey: model,
+      Params: param,
+    }
+    
+    actionList = append(actionList, action)
+  }
+
+  payload := WyzeRunActionListRequest{
+    AppVer: wyzeDeveloperApi,
+    PhoneId: wyzeDeveloperApi,
+    AccessToken: accessToken,
+    SC: wyzeDeveloperApi,
+    SV: wyzeSvActionValue,
+    TS: wyzeRequestTimestamp,
+    ActionList: actionList,
+  }
+
+  _, err := client.R().
+    SetHeader("Content-Type", wyzeContentType).
+    SetHeader("Host", wyzeApiHost).
+    SetBody(&payload).
+    Post(wyzeRunActionEndpoint)
+   
+  if (err != nil) {
+    log.Println(err)
+  }
+}
+
+func GetWyzeDeviceProperties(client *resty.Client,
+    accessToken string, devices []string, properties []string) WyzeDevicePropertyResponse {
+  var devicePropertyResponse WyzeDevicePropertyResponse
+
+  payload := WyzeDevicePropertyRequest{
+    AppVer: wyzeDeveloperApi,
+    PhoneId: wyzeDeveloperApi,
+    AccessToken: accessToken,
+    SC: wyzeDeveloperApi,
+    SV: wyzeDeveloperApi,
+    TS: wyzeRequestTimestamp,
+    DeviceList: devices,
+    TargetPropertyList: properties,
+  }
+
+  _, err := client.R().
+    SetHeader("Content-Type", wyzeContentType).
+    SetHeader("Host", wyzeApiHost).
+    SetBody(&payload).
+    SetResult(&devicePropertyResponse).
+    Post(wyzeGetDevicePropertiesEndpoint)
+   
+  if (err != nil) {
+    log.Println(err)
+  }
+  
+  var newDeviceList []WyzeDeviceProperties
+  
+  for _,device := range devicePropertyResponse.Data.DeviceList {
+    device.PropertyMap = make(map[string]string)
+    for _,props := range device.Properties {
+      device.PropertyMap[props.Pid] = props.Value
+    }
+    newDeviceList = append(newDeviceList, device)
+  }
+  
+  devicePropertyResponse.Data.DeviceList = newDeviceList
+
+  return devicePropertyResponse
 }
 
 func saveFile(url string, fileName string) {
