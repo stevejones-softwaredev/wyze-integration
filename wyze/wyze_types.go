@@ -28,18 +28,18 @@ type WyzeAccessTokenResponse struct {
 }
 
 type WyzeDevice struct {
-  MAC string         `json:"mac"`
-  Nickname string    `json:"nickname"`
-  Model string       `json:"product_model"`
-  ProductType string `json:"product_type"`
-  DeviceMac string   `json:"device_mac"`
-  Properties map[string]string
+  MAC string                   `json:"mac"`
+  Nickname string              `json:"nickname"`
+  Model string                 `json:"product_model"`
+  ProductType string           `json:"product_type"`
+  DeviceMac string             `json:"device_mac"`
+  Properties map[string]string `json:"properties,omitempty"`
 }
 
 type WyzeDeviceGroup struct {
   Name string             `json:"group_name"`
   DeviceList []WyzeDevice `json:"device_list"`
-  PoweredOn bool
+  PoweredOn bool          `json:"powered_on"`
 }
 
 type WyzeDeviceData struct {

@@ -197,45 +197,30 @@ func GetWyzeGroupList(client *resty.Client,
     SetResult(&deviceListResponse).
     Post(wyzeGetDeviceListEndpoint)
 
+  deviceListResponse.Data.DeviceList = IntegrateDeviceProperties(client, accessToken, deviceListResponse.Data.DeviceList)
+
   devicesMap := make(map[string]WyzeDevice)
   var deviceMacs []string
-  var propIds []string
-
-  propIds = append(propIds, "P3")
 
   for _,device := range deviceListResponse.Data.DeviceList {
     devicesMap[device.MAC] = device
+    device.DeviceMac = device.MAC
     deviceMacs = append(deviceMacs, device.MAC)
   }
 
-  properties := GetWyzeDeviceProperties(client, accessToken, deviceMacs, propIds)
-
-  propMap := make(map[string]map[string]string)
   var newGroups []WyzeDeviceGroup
   
-  for _,prop := range properties.Data.DeviceList {
-    propMap[prop.DeviceMac] = prop.PropertyMap
-  }
-  
   for _,group := range deviceListResponse.Data.GroupList {
-    var newGroupDeviceList []WyzeDevice
     group.PoweredOn = false
+    var newDeviceList []WyzeDevice
   
     for _,device := range group.DeviceList {
-      dev,ok := devicesMap[device.DeviceMac]
-
-      if (ok) {
-        newGroupDeviceList = append(newGroupDeviceList, dev)
-      }
-      
-      prop, ok := propMap[device.DeviceMac]
-      
-      if (ok) {
-        group.PoweredOn = (group.PoweredOn || (prop["P3"] == "1"))
-      }
+      propDevice := devicesMap[device.DeviceMac]
+      group.PoweredOn = (group.PoweredOn || (propDevice.Properties["power_state"] == "1"))
+      newDeviceList = append(newDeviceList, propDevice)
     }
 
-    group.DeviceList = newGroupDeviceList
+    group.DeviceList = newDeviceList
     newGroups = append(newGroups, group)
   }
 
