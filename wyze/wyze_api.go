@@ -284,11 +284,23 @@ func SetWyzeProperties(client *resty.Client,
     properties map[string]string) {
 
   var propList []WyzeActionProperty
+
+  namesToCodes := getPropertyNamesToCodesMap()
   
   for key, value := range properties {
-    prop := WyzeActionProperty {
-      Pid: key,
-      Pvalue: value,
+    wyzeKey, ok := namesToCodes[key]
+    var prop WyzeActionProperty
+
+    if (ok) {
+      prop = WyzeActionProperty {
+        Pid: wyzeKey,
+        Pvalue: value,
+      }
+    } else {
+      prop = WyzeActionProperty {
+        Pid: key,
+        Pvalue: value,
+      }
     }
     propList = append(propList, prop)
   }
@@ -373,7 +385,7 @@ func GetWyzeDeviceProperties(client *resty.Client,
     device.PropertyMap = make(map[string]string)
     for _,props := range device.Properties {
       propName, propOk := codeToName[props.Pid]
-      
+
       if (propOk) {
         device.PropertyMap[propName] = props.Value
       } else {
