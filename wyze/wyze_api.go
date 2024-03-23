@@ -69,6 +69,7 @@ func GetWyzeCamThumbnails(client *resty.Client,
     accessToken string,
     count int,
     devices []string,
+    tags []int,
     begin_time time.Time,
     end_time time.Time) []WyzeDownloadedFile {
   var thumbnailPaths []WyzeDownloadedFile
@@ -86,6 +87,7 @@ func GetWyzeCamThumbnails(client *resty.Client,
     PhoneSystemType: "1",
     BeginTime: strconv.FormatInt(begin_time.UnixMilli(), 10),
     EndTime: strconv.FormatInt(end_time.UnixMilli(), 10),
+    Tags: tags,
     TS: wyzeRequestTimestamp,
   }
 

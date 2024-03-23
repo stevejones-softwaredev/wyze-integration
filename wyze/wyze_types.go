@@ -137,6 +137,7 @@ type WyzeEventRequest struct {
   PhoneSystemType string  `json:"phone_system_type"`
   BeginTime string        `json:"begin_time"`
   EndTime string          `json:"end_time"`
+  Tags []int              `json:"event_tag_list"`
   TS string               `json:"ts"`
 }
 

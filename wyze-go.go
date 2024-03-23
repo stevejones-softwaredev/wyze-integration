@@ -30,6 +30,7 @@ func main() {
     accessToken,
     10,
     parseCamList(environment["WYZE_CAM_LIST"]),
+    []int {102, 103}, // restrict to events tagged with "pet" of "vehicle" (for Syd's dumptruck)
     start,
     end)
   deviceMap := getDeviceMacList(client, accessToken)
@@ -58,13 +59,10 @@ func main() {
 
     selectHeader := fmt.Sprintf("%s\n%s\n%s", time.UnixMilli(file.Timestamp).Format(time.RFC850), deviceMap[file.Mac].Nickname, publicFile.PermalinkPublic)
     textBlock := slack.NewTextBlockObject("mrkdwn", selectHeader, false, false)
-//    headerSectionBlock := slack.NewSectionBlock(textBlock, nil, nil)
 
-    imageBlock := slack.NewImageBlockElement(publicFile.PermalinkPublic, msg)
-    imageAccessory := slack.NewAccessory(imageBlock)
-    imageSectionBlock := slack.NewSectionBlock(textBlock, nil, imageAccessory)
+    textSectionBlock := slack.NewSectionBlock(textBlock, nil, nil)
 
-    _,_,_,msgErr := botApi.SendMessage(environment["SLACK_CHANNEL"], slack.MsgOptionBlocks(imageSectionBlock, catNameSectionBlock, catActivitySectionBlock))
+    _,_,_,msgErr := botApi.SendMessage(environment["SLACK_CHANNEL"], slack.MsgOptionBlocks(textSectionBlock, catNameSectionBlock, catActivitySectionBlock))
 
     if msgErr != nil {
       fmt.Println(msgErr)
