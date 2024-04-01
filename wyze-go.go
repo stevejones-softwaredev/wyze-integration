@@ -25,21 +25,31 @@ func main() {
 
   start, end := getTimeBounds(environment)
 
+  filteredFiles := wyze.GetWyzeCamThumbnails(client,
+    getOptionalVar("WYZE_HOME", "./", &environment),
+    accessToken,
+    10,
+    parseCamList(environment["WYZE_FILTERED_CAM_LIST"]),
+    []int {102, 103}, // restrict to events tagged with "pet" of "vehicle" (for Syd's dumptruck)
+    start,
+    end)
   files := wyze.GetWyzeCamThumbnails(client,
     getOptionalVar("WYZE_HOME", "./", &environment),
     accessToken,
     10,
     parseCamList(environment["WYZE_CAM_LIST"]),
-    []int {102, 103}, // restrict to events tagged with "pet" of "vehicle" (for Syd's dumptruck)
+    []int {}, // restrict to events tagged with "pet" of "vehicle" (for Syd's dumptruck)
     start,
     end)
+  files = append(files, filteredFiles...)
+
   deviceMap := getDeviceMacList(client, accessToken)
 
   botApi := slack.New(environment["SLACK_OAUTH_BOT_TOKEN"])
   userApi := slack.New(environment["SLACK_OAUTH_USER_TOKEN"])
 
   catNameSectionBlock, catActivitySectionBlock := createConstantSectionBlocks()
-
+  
   for _,file := range files {
     msg := fmt.Sprintf("Recorded at %s from %s",time.UnixMilli(file.Timestamp).Format(time.RFC850), deviceMap[file.Mac].Nickname)
     uploadParams := slack.FileUploadParameters{
