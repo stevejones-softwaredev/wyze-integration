@@ -12,31 +12,6 @@ import (
   "os"
 )
 
-func GetWyzeRefreshToken(client *resty.Client, username string, password string) string {
-  var refreshTokenResponse WyzeRefreshTokenResponse
-  
-  payload := WyzeRefreshTokenRequest{
-    Name: username,
-    Password: password,
-  }
-
-  _, err := client.R().
-    SetHeader("Content-Type", wyzeContentType).
-    SetHeader("Host", wyzeAuthHost).
-    SetHeader("Keyid", "b4700b6b-9120-4622-8a6c-af5c67406510").
-    SetHeader("Apikey", "5wYWKpbxRpWpnG4t3Sf5zMzgqXQ1rjf7AooPYlGx6aDHIQa3rs8x1YYZGpSI").
-    SetBody(&payload).
-    SetResult(&refreshTokenResponse).
-    Post(wyzeAuthEndpoint)
-
-    if err != nil {
-      fmt.Println(err)
-      return ""
-    } else {
-      return refreshTokenResponse.RefreshToken
-    }
-}
-
 func GetWyzeAccessToken(client *resty.Client, refreshToken string) string {
   var accessTokenResponse WyzeAccessTokenResponse
 
