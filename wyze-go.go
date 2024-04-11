@@ -19,7 +19,7 @@ func main() {
 
   environment := validateNeededInputs()
   
-  wyzeToken := fmt.Sprintf("%s==", environment["WYZE_REFRESH_TOKEN"])
+  wyzeToken := environment["WYZE_REFRESH_TOKEN"]
 
   accessToken := wyze.GetWyzeAccessToken(client, wyzeToken)
 
