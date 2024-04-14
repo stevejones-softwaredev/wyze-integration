@@ -18,10 +18,8 @@ func main() {
   client := resty.New()
 
   environment := validateNeededInputs()
-  
-  wyzeToken := environment["WYZE_REFRESH_TOKEN"]
 
-  accessToken := wyze.GetWyzeAccessToken(client, wyzeToken)
+  accessToken := wyze.GetWyzeAccessToken(client, environment)
 
   start, end := getTimeBounds(environment)
 
@@ -161,12 +159,20 @@ func getTimeBounds(environment map[string]string) (time.Time, time.Time) {
   lookback_seconds,_ := strconv.Atoi(environment["WYZE_LOOKBACK_SECONDS"])
   lookback_seconds *= -1
 
-  defer deleteExpiredThumbnails(dirName, files)
+  var matchingFiles []fs.FileInfo
 
-  if len(files) == 0 {
+  for _,file := range files {
+    if (strings.Contains(file.Name(), ".jpg")) {
+      matchingFiles = append(matchingFiles, file)
+    }
+  }
+
+  defer deleteExpiredThumbnails(dirName, matchingFiles)
+
+  if len(matchingFiles) == 0 {
     return end_time.Add(time.Second * time.Duration(lookback_seconds)), end_time
   } else {
-    lastFileName := files[len(files)-1].Name()
+    lastFileName := matchingFiles[len(matchingFiles)-1].Name()
     beginStampString := strings.Split(lastFileName,".")[0]
     i, err := strconv.ParseInt(beginStampString, 10, 64)
     if err != nil {

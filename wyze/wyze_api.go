@@ -2,6 +2,7 @@ package wyze
 
 import (
   "github.com/go-resty/resty/v2"
+  "github.com/golang-jwt/jwt/v5"
   "fmt"
   "log"
   "strconv"
@@ -12,7 +13,63 @@ import (
   "os"
 )
 
-func GetWyzeAccessToken(client *resty.Client, refreshToken string) string {
+func isRefreshTokenValid(refreshToken string) bool {
+  if (len(refreshToken) == 0) {
+    return false
+  }
+
+  token, _, tokenErr := new(jwt.Parser).ParseUnverified(refreshToken, jwt.MapClaims{})
+
+  if (tokenErr != nil) {
+    fmt.Println("Token Error: ", tokenErr)
+    return false;
+  }
+
+  expiration, expErr := token.Claims.GetExpirationTime()
+
+  if (expErr != nil) {
+    fmt.Println("Expiration Claim Error: ", expErr)
+    return false;
+  }
+
+  return (time.Now().Before(expiration.Time))
+}
+
+func GetWyzeRefreshToken(client *resty.Client, username string, password string, keyId string, apiKey string) string {
+  var refreshTokenResponse WyzeRefreshTokenResponse
+  
+  payload := WyzeRefreshTokenRequest{
+    Name: username,
+    Password: password,
+  }
+
+  _, err := client.R().
+    SetHeader("Content-Type", wyzeContentType).
+    SetHeader("Host", wyzeAuthHost).
+    SetHeader("Keyid", keyId).
+    SetHeader("Apikey", apiKey).
+    SetBody(&payload).
+    SetResult(&refreshTokenResponse).
+    Post(wyzeAuthEndpoint)
+
+  if err != nil {
+    fmt.Println(err)
+    return ""
+  } else {
+    return refreshTokenResponse.RefreshToken
+  }
+}
+
+
+func GetWyzeAccessToken(client *resty.Client, env map[string]string) string {
+  filePath := env["WYZE_HOME"] + "refresh_token.txt"
+  refreshToken := readRefreshToken(filePath)
+  if (!isRefreshTokenValid(refreshToken)) {
+    fmt.Println("Create new refresh token")
+    refreshToken = GetWyzeRefreshToken(client, env["WYZE_USERNAME"], env["WYZE_PASSWORD_HASH"], env["WYZE_KEY_ID"], env["WYZE_API_KEY"])
+    writeRefreshToken(refreshToken, filePath)
+  }
+
   var accessTokenResponse WyzeAccessTokenResponse
 
   payload := WyzeAccessTokenRequest{
@@ -401,6 +458,29 @@ func IntegrateDeviceProperties(client *resty.Client,
 
   return propDevices;
 }
+
+func readRefreshToken(filePath string) string {
+  data, err := os.ReadFile(filePath)
+  if err != nil {
+    log.Println(err)
+    return ""
+  }
+
+  return string(data[:])
+}
+
+func writeRefreshToken(refreshToken string, filePath string) {
+  f, err := os.Create(filePath)
+  if err != nil {
+    log.Println(err)
+    return
+  }
+
+  defer f.Close()
+
+  fmt.Fprintf(f, "%s", refreshToken)
+}
+
 
 func saveFile(url string, fileName string) {
   response, err := http.Get(url)
