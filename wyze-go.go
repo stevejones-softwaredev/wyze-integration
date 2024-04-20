@@ -11,7 +11,7 @@ import (
   "strings"
   "strconv"
   "github.com/slack-go/slack"
-  "stevejones.softwaredev/wyze-go/wyze"
+  "github.com/stevejones-softwaredev/wyze-api"
 )
 
 func main() {
