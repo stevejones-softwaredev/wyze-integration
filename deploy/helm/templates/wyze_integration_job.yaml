@@ -21,21 +21,51 @@ spec:
                 - mountPath: "/app/download/"
                   name: {{ .Release.Name }}-wyze-thumbnails-storage
               env:
-                - name: WYZE_REFRESH_TOKEN
+                - name: WYZE_USERNAME
                   valueFrom:
                     secretKeyRef:
                       name: {{ .Release.Name }}-wyze-integration-secrets
-                      key: WYZE_REFRESH_TOKEN
-                - name: SLACK_OAUTH_TOKEN
+                      key: WYZE_USERNAME
+                - name: WYZE_PASSWORD_HASH
                   valueFrom:
                     secretKeyRef:
                       name: {{ .Release.Name }}-wyze-integration-secrets
-                      key: SLACK_OAUTH_TOKEN
+                      key: WYZE_PASSWORD_HASH
+                - name: WYZE_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Release.Name }}-wyze-integration-secrets
+                      key: WYZE_KEY_ID
+                - name: WYZE_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Release.Name }}-wyze-integration-secrets
+                      key: WYZE_API_KEY
+                - name: SLACK_OAUTH_BOT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Release.Name }}-wyze-integration-secrets
+                      key: SLACK_OAUTH_BOT_TOKEN
+                - name: SLACK_OAUTH_USER_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Release.Name }}-wyze-integration-secrets
+                      key: SLACK_OAUTH_USER_TOKEN
                 - name: WYZE_CAM_LIST
                   valueFrom:
                     configMapKeyRef:
                       name: {{ .Release.Name }}-wyze-integration-config
                       key: WYZE_CAM_LIST
+                - name: WYZE_FILTERED_CAM_LIST
+                  valueFrom:
+                    configMapKeyRef:
+                      name: {{ .Release.Name }}-wyze-integration-config
+                      key: WYZE_FILTERED_CAM_LIST
+                - name: WYZE_FILTER_VALUES
+                  valueFrom:
+                    configMapKeyRef:
+                      name: {{ .Release.Name }}-wyze-integration-config
+                      key: WYZE_FILTER_VALUES
                 - name: WYZE_LOOKBACK_SECONDS
                   valueFrom:
                     configMapKeyRef:

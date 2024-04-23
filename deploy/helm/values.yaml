@@ -13,9 +13,15 @@ volume:
 
 wyze:
   camList: ""
+  filteredCamList: ""
+  filterValues: ""
   lookbackInSeconds: "300"
-  refreshToken: ""
+  userName: ""
+  passwordHash: ""
+  apiKeyId: ""
+  apiKey: ""
 
 slack:
-  token: ""
+  botToken: ""
+  userToken: ""
   channel: ""

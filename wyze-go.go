@@ -26,17 +26,18 @@ func main() {
   filteredFiles := wyze.GetWyzeCamThumbnails(client,
     getOptionalVar("WYZE_HOME", "./", &environment),
     accessToken,
-    10,
+     10,
     parseCamList(environment["WYZE_FILTERED_CAM_LIST"]),
-    []int {102, 103}, // restrict to events tagged with "pet" of "vehicle" (for Syd's dumptruck)
+    parseFilterList(environment["WYZE_FILTER_VALUES"]),
     start,
     end)
+
   files := wyze.GetWyzeCamThumbnails(client,
     getOptionalVar("WYZE_HOME", "./", &environment),
     accessToken,
     10,
     parseCamList(environment["WYZE_CAM_LIST"]),
-    []int {}, // restrict to events tagged with "pet" of "vehicle" (for Syd's dumptruck)
+    []int {},
     start,
     end)
   files = append(files, filteredFiles...)
@@ -46,68 +47,31 @@ func main() {
   botApi := slack.New(environment["SLACK_OAUTH_BOT_TOKEN"])
   userApi := slack.New(environment["SLACK_OAUTH_USER_TOKEN"])
 
-  catNameSectionBlock, catActivitySectionBlock := createConstantSectionBlocks()
-  
   for _,file := range files {
-    msg := fmt.Sprintf("Recorded at %s from %s",time.UnixMilli(file.Timestamp).Format(time.RFC850), deviceMap[file.Mac].Nickname)
-    uploadParams := slack.FileUploadParameters{
-      File: file.Path,
-      Title: msg,
-      InitialComment: msg,
-      Filename: file.Path,
-    }
-    uploadedFile, err := userApi.UploadFile(uploadParams)
-    if err != nil {
-      fmt.Println(err)
-    }
-
-    publicFile,_,_,_ := userApi.ShareFilePublicURL(uploadedFile.ID)
-
-    fmt.Printf("ID: %s, Title: %s\n", uploadedFile.ID, uploadedFile.Title)
-
-    selectHeader := fmt.Sprintf("%s\n%s\n%s", time.UnixMilli(file.Timestamp).Format(time.RFC850), deviceMap[file.Mac].Nickname, publicFile.PermalinkPublic)
-    textBlock := slack.NewTextBlockObject("mrkdwn", selectHeader, false, false)
-
-    textSectionBlock := slack.NewSectionBlock(textBlock, nil, nil)
-
-    _,_,_,msgErr := botApi.SendMessage(environment["SLACK_CHANNEL"], slack.MsgOptionBlocks(textSectionBlock, catNameSectionBlock, catActivitySectionBlock))
-
-    if msgErr != nil {
-      fmt.Println(msgErr)
-    }
+    createSlackMessageWithFile(file, deviceMap, environment["SLACK_CHANNEL"], botApi, userApi)
   }
-}
-
-func createConstantSectionBlocks() (*slack.SectionBlock,*slack.SectionBlock) {
-  catNameTextBlock := slack.NewTextBlockObject("plain_text", "Cat Name:", false, false)
-  catNameSydneyText := slack.NewTextBlockObject("plain_text", "Sydney", false, false)
-  catNameSaviText := slack.NewTextBlockObject("plain_text", "Savi", false, false)
-  catNameNoCatText := slack.NewTextBlockObject("plain_text", "Not a Cat", false, false)
-  catNameSydneyOption := slack.NewOptionBlockObject("Sydney", catNameSydneyText, nil)
-  catNameSaviOption := slack.NewOptionBlockObject("Savi", catNameSaviText, nil)
-  catNameNoCatOption := slack.NewOptionBlockObject("NotACat", catNameNoCatText, nil)
-  catNameOptionsBlock := slack.NewOptionsSelectBlockElement("static_select", catNameTextBlock, "cat_name", catNameSaviOption, catNameSydneyOption, catNameNoCatOption)
-  catNameAccessory := slack.NewAccessory(catNameOptionsBlock)
-  catNameSectionBlock := slack.NewSectionBlock(catNameTextBlock, nil, catNameAccessory)
-  catNameSectionBlock.BlockID = "cat_name"
-
-  catActivityTextBlock := slack.NewTextBlockObject("plain_text", "Cat Activity:", false, false)
-  catActivityPeeText := slack.NewTextBlockObject("plain_text", "Pee", false, false)
-  catActivityPoopText := slack.NewTextBlockObject("plain_text", "Poop", false, false)
-  catActivityNoneText := slack.NewTextBlockObject("plain_text", "Neither", false, false)
-  catActivityPeeOption := slack.NewOptionBlockObject("Pee", catActivityPeeText, nil)
-  catActivityPoopOption := slack.NewOptionBlockObject("Poop", catActivityPoopText, nil)
-  catActivityNoneOption := slack.NewOptionBlockObject("Neither", catActivityNoneText, nil)
-  catActivityOptionsBlock := slack.NewOptionsSelectBlockElement("static_select", catActivityTextBlock, "cat_activity", catActivityPeeOption, catActivityPoopOption, catActivityNoneOption)
-  catActivityAccessory := slack.NewAccessory(catActivityOptionsBlock)
-  catActivitySectionBlock := slack.NewSectionBlock(catActivityTextBlock, nil, catActivityAccessory)
-  catActivitySectionBlock.BlockID = "cat_activity"
-
-  return catNameSectionBlock, catActivitySectionBlock
 }
 
 func parseCamList(camList string) []string {
   return strings.Split(camList, ":")
+}
+
+func parseFilterList(filterList string) []int {
+  var filters []int
+  names := strings.Split(filterList, ":")
+  filterMap := wyze.GetFilterNameToValueMap()
+
+  for _,name := range names {
+    filterValue, filterOk := filterMap[name]
+
+    if (filterOk) {
+      filters = append(filters, filterValue)
+    } else {
+      log.Println("Unknown filter specified: ", name)
+    }
+  }
+  
+  return filters
 }
 
 func getDeviceMacList(client *resty.Client,
@@ -140,13 +104,17 @@ func validateNeededInputs() map[string]string{
       return
   })
 
-  fmt.Println(environment["TEST_VAR"])
-  checkRequiredVar("WYZE_REFRESH_TOKEN", environment)
+  checkRequiredVar("WYZE_USERNAME", environment)
+  checkRequiredVar("WYZE_PASSWORD_HASH", environment)
+  checkRequiredVar("WYZE_KEY_ID", environment)
+  checkRequiredVar("WYZE_API_KEY", environment)
   checkRequiredVar("SLACK_OAUTH_BOT_TOKEN", environment)
   checkRequiredVar("SLACK_OAUTH_USER_TOKEN", environment)
   checkRequiredVar("WYZE_CAM_LIST", environment)
   checkRequiredVar("SLACK_CHANNEL", environment)
   getOptionalVar("WYZE_LOOKBACK_SECONDS", "330", &environment)
+  getOptionalVar("WYZE_FILTERED_CAM_LIST", "", &environment)
+  getOptionalVar("WYZE_FILTER_VALUES", "", &environment)
   getOptionalVar("WYZE_HOME", "./", &environment)
 
   return environment

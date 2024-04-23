@@ -4,5 +4,7 @@ metadata:
   name: {{ .Release.Name }}-wyze-integration-config
 data:
   WYZE_CAM_LIST: "{{ .Values.wyze.camList }}"
+  WYZE_FILTERED_CAM_LIST: "{{ .Values.wyze.filteredCamList }}"
+  WYZE_FILTER_VALUES: "{{ .Values.wyze.filterValues }}"
   WYZE_LOOKBACK_SECONDS: "{{ .Values.wyze.lookbackInSeconds }}"
   SLACK_CHANNEL: "{{ .Values.slack.channel }}"
