@@ -15,12 +15,14 @@ spec:
                 claimName: {{ .Release.Name }}-wyze-thumbnails-mount
           containers:
             - name: wyze-integration-container
-              image: docker.io/library/wyze-go:tiny
+              image: docker.io/library/wyze-go:latest
               imagePullPolicy: IfNotPresent
               volumeMounts:
                 - mountPath: "/app/download/"
                   name: {{ .Release.Name }}-wyze-thumbnails-storage
               env:
+                - name: WYZE_HOME
+                  value: "/app/download/"
                 - name: WYZE_USERNAME
                   valueFrom:
                     secretKeyRef:
