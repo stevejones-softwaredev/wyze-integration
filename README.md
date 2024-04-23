@@ -1,6 +1,6 @@
 # Wyze Integration
 
-This project is a bespoke solution in Go intended to facilitate a fairly simple flow of capturing thumbnails from Wyze camera events and posting them to a slack channel. It's focus is extremely narrow to this purpose. It was done as a learning project and has a number of quirks that are not Go best practices.
+This project is a bespoke solution in Go intended to facilitate a fairly simple flow of capturing thumbnails from Wyze camera events and posting them to a slack channel. Its focus is extremely narrow to this purpose. It was done as a learning project and has a number of quirks that are not Go best practices.
 
 ## How to build the app
 The project can be built as a standard Go application using Go v19 or later, or can be built using the included `Dockerfile_build`. The file is coded to default to building for linux with amd64 architecture. However, build arguments for the docker file are available to specify different operating systems and architectures. For instance, to build for an M-series Mac, you would use:
